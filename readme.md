@@ -5,6 +5,10 @@ This project is a Blazor-based application designed to monitor and report change
 
 ## Technical Choices
 
+### Blazor vs. MVC/ASP.NET Core
+*   **Unified Language (C#)**: Using Blazor allows for a single development language (C#) across both the backend logic and the frontend UI. This reduces context switching and eliminates the need for extensive JavaScript for interactivity.
+*   **Simplified State Management**: State is maintained on the server within the user's circuit, making it easier to handle complex UI flows without complex client-side state management libraries.
+
 ### Transient vs. Scoped Registrations
 *   **Transient**: Most services in this project (`IFolderService`, `IFolderRepository`, `IFolderStateFileStore`) are registered as **Transient**.
     *   **Reasoning**: In Blazor Server, `Scoped` services live for the entire duration of a user's circuit (connection). For stateless or request-based logic, `Transient` ensures that a fresh instance is created every time it's needed, preventing unintended side effects or stale data from being carried over within a long-lived circuit.
