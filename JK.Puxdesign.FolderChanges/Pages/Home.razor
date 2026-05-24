@@ -1,0 +1,109 @@
+@page "/"
+@layout MainLayout
+@inject IFolderService FolderService
+
+<PageTitle>Home</PageTitle>
+
+<MudText Typo="Typo.h3">Folder Test</MudText>
+
+<MudPaper Class="pa-4 mt-4">
+    <MudTextField @bind-Value="_folderPath" Label="Folder Address" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@_loading"/>
+    <div class="d-flex align-center mt-2">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="TestFolder" Disabled="@_loading">
+            @if (_loading)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Processing...</MudText>
+            }
+            else
+            {
+                <MudText>Trigger Test</MudText>
+            }
+        </MudButton>
+    </div>
+</MudPaper>
+
+@if (!string.IsNullOrEmpty(_testResult))
+{
+    <MudAlert Severity="@(_testResult.StartsWith("Success") ? Severity.Success : Severity.Error)" Class="mt-4">
+        @_testResult
+    </MudAlert>
+}
+
+@if (_newFiles.Any())
+{
+    <MudText Typo="Typo.h6" Class="mt-6">New Files</MudText>
+    <MudTable Items="@_newFiles" Hover="true" Breakpoint="Breakpoint.Sm" Class="mt-2" Loading="@_loading" Dense="true">
+        <HeaderContent>
+            <MudTh>File Name</MudTh>
+            <MudTh>Version</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="File Name">@context.Name</MudTd>
+            <MudTd DataLabel="Version">@context.Version</MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@if (_changedFiles.Any())
+{
+    <MudText Typo="Typo.h6" Class="mt-6">Changed Files</MudText>
+    <MudTable Items="@_changedFiles" Hover="true" Breakpoint="Breakpoint.Sm" Class="mt-2" Loading="@_loading" Dense="true">
+        <HeaderContent>
+            <MudTh>File Name</MudTh>
+            <MudTh>Version</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="File Name">@context.Name</MudTd>
+            <MudTd DataLabel="Version">@context.Version</MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@if (_deletedFiles.Any() || _deletedFolders.Any())
+{
+    <MudText Typo="Typo.h6" Class="mt-6" Color="Color.Error">Deleted Files and Subfolders</MudText>
+    <MudPaper Class="pa-4 mt-2" Elevation="0" Style="border: 1px solid var(--mud-palette-error); background-color: var(--mud-palette-error-hover);">
+        <MudList T="string">
+            @foreach (var file in _deletedFiles)
+            {
+                <MudListItem Icon="@Icons.Material.Filled.Delete" Text="@($"{file.Name} (v{file.Version})")" IconColor="Color.Error" />
+            }
+            @foreach (var folder in _deletedFolders)
+            {
+                <MudListItem Icon="@Icons.Material.Filled.FolderDelete" Text="@(folder)" IconColor="Color.Error" />
+            }
+        </MudList>
+    </MudPaper>
+}
+
+@code {
+    private string _folderPath = string.Empty;
+    private string _testResult = string.Empty;
+
+    private List<FileDetail> _newFiles = new();
+    private List<FileDetail> _changedFiles = new();
+    private List<FileDetail> _deletedFiles = new();
+    private List<string> _deletedFolders = new();
+    private bool _loading = false;
+
+    private async Task TestFolder()
+    {
+        _loading = true;
+        _newFiles.Clear();
+        _changedFiles.Clear();
+        _deletedFiles.Clear();
+        _deletedFolders.Clear();
+        var result = await FolderService.ProcessFolderAsync(_folderPath);
+        _testResult = result.Message;
+        
+        if (result.Success)
+        {
+            _newFiles = result.NewFiles;
+            _changedFiles = result.ChangedFiles;
+            _deletedFiles = result.DeletedFiles;
+            _deletedFolders = result.DeletedFolders;
+        }
+        _loading = false;
+    }
+}
